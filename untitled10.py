@@ -1,35 +1,53 @@
-# ... (your imports and data loading code) ...
+import streamlit as st
+import pickle
+import pandas as pd
+import requests
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import ast
 
-# Preprocessing
+# ... (fetch_poster function remains the same) ...
+
+# Data Loading and Preprocessing
+movies = pd.read_csv('tmdb_5000_movies.csv')
+credits = pd.read_csv('tmdb_5000_movies.csv')
+credits.rename(columns={'movie_id': 'id'}, inplace=True)
+merged_data = pd.merge(movies, credits, on='id')
+
 selected_columns = merged_data[['genres_x', 'id', 'keywords_x', 'original_title_x', 'overview_x']]
 selected_columns = selected_columns.rename(columns={'original_title_x': 'title', 'genres_x': 'genres', 'keywords_x': 'keywords', 'overview_x': 'overview'})
 
-from ast import literal_eval
+selected_columns['combined_features'] = selected_columns['genres'].apply(lambda x: ' '.join(x)) + ' ' + \
+                                         selected_columns['overview'] + ' ' + \
+                                         selected_columns['keywords'].apply(lambda x: ' '.join(x))
 
-# Convert 'genres' and 'keywords' to strings
-selected_columns['genres'] = selected_columns['genres'].apply(literal_eval).apply(lambda x: ' '.join([d['name'] for d in x]))
-selected_columns['keywords'] = selected_columns['keywords'].apply(literal_eval).apply(lambda x: ' '.join([d['name'] for d in x]))
+# Impute or remove any NaN values
+selected_columns['combined_features'] = selected_columns['combined_features'].fillna('')
+# Ensure 'combined_features' column is of type str
+selected_columns['combined_features'] = selected_columns['combined_features'].astype(str)
 
-selected_columns['combined_features'] = selected_columns['genres'] + ' ' + selected_columns['overview'] + ' ' + selected_columns['keywords']
-
-# ... (TfidfVectorizer and cosine_similarity code) ...
-
+# ... (your existing code) ...
 # Streamlit Integration
 st.title('A Movie Recommendation System')
-selected_movie_name = st.selectbox('Which movie u want to search?', selected_columns['title'].values)
-
-# Recommendation Function
+selected_movie_name = st.selectbox(
+    'Which movie u want to search?',
+    selected_columns['title'].values  # Use selected_columns here
+)
+# same commands is being used which u used in the jupyter-Notebook
 def recommend_func(movie):
-    movie_index = selected_columns[selected_columns['title'] == movie].index[0]  # Use selected_columns
+    movie_index = movies[movies['title'] == movie].index[0]
     distances = similarity[movie_index]
     movie_list = sorted(list(enumerate(distances)), reverse=True, key=lambda x: x[1])[1:6]
+
     recommended_movies = []
-    recommended_movie_posters = []
+    recommended_movies_posters = []
     for i in movie_list:
-        movie_id = selected_columns.iloc[i[0]].id  # Access id from selected_columns
-        recommended_movies.append(selected_columns.iloc[i[0]].title)  # Access title from selected_columns
-        recommended_movie_posters.append(fetch_poster(movie_id))
-    return recommended_movies, recommended_movie_posters
+        # movie_id = movies['movie_id'][i[0]]  # -> your command
+        movie_id = movies.iloc[i[0]].movie_id  # -> tutorial command
+        recommended_movies.append(movies['title'][i[0]])
+        # fetching poster from API
+        recommended_movies_posters.append(fetch_poster(movie_id))
+    return recommended_movies, recommended_movies_posters
 
 
 if st.button('Recommend'):

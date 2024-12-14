@@ -23,7 +23,7 @@ credits = pd.read_csv('tmdb_5000_movies.csv')
 credits.rename(columns={'movie_id': 'id'}, inplace=True)
 merged_data = pd.merge(movies, credits, on='id')
 
-!pip install streamlit==1.28.1
+
 
 print(merged_data.columns)
 

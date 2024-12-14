@@ -3,7 +3,6 @@ import pickle
 import pandas as pd
 import requests
 
-from sklearn.metrics.pairwise import cosine_similarity
 import ast
 
 # ... (fetch_poster function remains the same) ...
